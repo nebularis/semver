@@ -1,0 +1,10 @@
+{application, semver,
+ [
+  {description, "Semantic Versioning Support Library"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]}
+ ]}.
