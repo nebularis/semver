@@ -19,31 +19,20 @@
 %% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 %% THE SOFTWARE.
 %% -----------------------------------------------------------------------------
--module(semver).
--export([parse/1, vsn_string/1, version/3]).
+-module(semver_props).
+-include_lib("proper/include/proper.hrl").
+-include_lib("eunit/include/eunit.hrl").
+-include_lib("hamcrest/include/hamcrest.hrl").
 
--include("semver.hrl").
+-compile(export_all).
 
-vsn_string(#semver{major=Major, minor=Minor, build=Build}) ->
-    io_lib:format("~p.~p.~p", [Major, Minor, Build]).
+%%
+%% Properties
+%%
 
-version(Major, Minor, Build) ->
-    #semver{major=Major, minor=Minor, build=Build}.
-
-parse(V) ->
-    case re:run(V,
-        "(?<major>[\\d]+)\\.(?<minor>[\\d]+)\\.(?<build>[\\d]+)(?<patch>.*)",
-        [no_auto_capture, anchored, notempty,
-            {capture, [major, minor, build, patch], list}]) of
-        nomatch ->
-            {error, invalid_version};
-        {match, [_,_,_,[]]=Matches} ->
-            list_to_tuple([semver|[list_to_integer(N) || 
-                                                N <- Matches, N /= []]] ++
-                                                [undefined]);
-        {match, [Maj,Min,Build,Patch]} ->
-            #semver{major=list_to_integer(Maj),
-                    minor=list_to_integer(Min),
-                    build=list_to_integer(Build),
-                    patch=Patch}
-    end.
+prop_all_valid_parse_strings() ->
+    ?FORALL({Maj, Min, Build}, {integer(), integer(), integer()},
+        ?IMPLIES(Maj > 0 andalso Min > 0 andalso Build > 0,
+        ?assertThat(
+            semver:parse(semver:vsn_string(semver:version(Maj, Min, Build))),
+                is(equal_to(semver:version(Maj, Min, Build)))))).
