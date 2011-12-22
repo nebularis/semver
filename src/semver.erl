@@ -42,8 +42,15 @@ parse(V) ->
                                                 N <- Matches, N /= []]] ++
                                                 [undefined]);
         {match, [Maj,Min,Build,Patch]} ->
-            #semver{major=list_to_integer(Maj),
-                    minor=list_to_integer(Min),
-                    build=list_to_integer(Build),
-                    patch=Patch}
+            Result = #semver{major=list_to_integer(Maj),
+                             minor=list_to_integer(Min),
+                             build=list_to_integer(Build)},
+            case Patch of
+                [] ->
+                    Result;
+                ("-" ++ Path) ->
+                    Result#semver{patch=Path};
+                _ ->
+                    Result#semver{patch=Patch}
+            end
     end.

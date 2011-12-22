@@ -31,7 +31,12 @@ basic_parser_test() ->
 patch_test() ->
     ?assertThat(semver:parse("15.21.3-RC2"), 
         is(equal_to(#semver{major=15, minor=21,
-                            build=3, patch="-RC2"}))).
+                            build=3, patch="RC2"}))).
+
+no_hyphen_patch_test() ->
+    ?assertThat(semver:parse("15.21.3alpha"), 
+        is(equal_to(#semver{major=15, minor=21,
+                            build=3, patch="alpha"}))).
 
 invalid_parse_test_() ->
     [{"Non-numeric major version number",

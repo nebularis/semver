@@ -38,16 +38,20 @@ prop_all_valid_parse_strings() ->
             semver:parse(semver:vsn_string(semver:version(Maj, Min, Build))),
                 is(equal_to(semver:version(Maj, Min, Build)))))).
 
-prop_any_patch_is_allowed() ->
+prop_any_hyphenated_patch_is_allowed() ->
     ?FORALL(Patch, alphanum(), 
         ?IMPLIES(length(Patch) > 1,
         ?assertThat(semver:parse("0.0.0-" ++ Patch),
-            is(equal_to(#semver{patch="-" ++ Patch}))))).
+            is(equal_to(#semver{patch=Patch}))))).
 
-matches_patch(Patch) ->
-    fun(V) ->
-        V#semver.patch == Patch
-    end.
+prop_any_a2z_patch_without_hypthen_is_allowed() ->
+    ?FORALL(Patch, a_to_z(), 
+        ?IMPLIES(length(Patch) > 1,
+        ?assertThat(semver:parse("0.0.0" ++ Patch),
+            is(equal_to(#semver{patch=Patch}))))).    
+
+a_to_z() ->
+    non_empty(list(integer(97, 122))).
 
 alphanum() ->
     %% NOTE: we avoid any encoding length issues in the match specifications
