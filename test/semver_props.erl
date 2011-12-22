@@ -50,8 +50,7 @@ matches_patch(Patch) ->
     end.
 
 alphanum() ->
-    %% NB: make sure xmerl (which we're using in the matchers)
-    %% doesn't fall on it's backside complaining about encodings and so on
-    %% TODO: this is far too conservative, so we'll need to broaden it later
+    %% NOTE: we avoid any encoding length issues in the match specifications
+    %% by limiting ourselves to alpha-numeric characters in the latin alphabet 
     union([non_empty(list(integer(97, 122))), 
            non_empty(list(integer(48, 57)))]).
