@@ -23,6 +23,7 @@
 -include_lib("proper/include/proper.hrl").
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("hamcrest/include/hamcrest.hrl").
+-include("semver.hrl").
 
 -compile(export_all).
 
@@ -36,3 +37,21 @@ prop_all_valid_parse_strings() ->
         ?assertThat(
             semver:parse(semver:vsn_string(semver:version(Maj, Min, Build))),
                 is(equal_to(semver:version(Maj, Min, Build)))))).
+
+prop_any_patch_is_allowed() ->
+    ?FORALL(Patch, alphanum(), 
+        ?IMPLIES(length(Patch) > 1,
+        ?assertThat(semver:parse("0.0.0-" ++ Patch),
+            is(equal_to(#semver{patch="-" ++ Patch}))))).
+
+matches_patch(Patch) ->
+    fun(V) ->
+        V#semver.patch == Patch
+    end.
+
+alphanum() ->
+    %% NB: make sure xmerl (which we're using in the matchers)
+    %% doesn't fall on it's backside complaining about encodings and so on
+    %% TODO: this is far too conservative, so we'll need to broaden it later
+    union([non_empty(list(integer(97, 122))), 
+           non_empty(list(integer(48, 57)))]).
