@@ -38,17 +38,80 @@ prop_all_valid_parse_strings() ->
             semver:parse(semver:vsn_string(semver:version(Maj, Min, Build))),
                 is(equal_to(semver:version(Maj, Min, Build)))))).
 
+prop_all_parsed_version_parts() ->
+    ?FORALL({Maj, Min, Build}, {integer(), integer(), integer()},
+        ?IMPLIES(Maj > 0 andalso Min > 0 andalso Build > 0,
+        begin
+            Vsn = semver:version(Maj, Min, Build),
+            ?assertThat(semver:major_version(Vsn), is(equal_to(Maj))),
+            ?assertThat(semver:minor_version(Vsn), is(equal_to(Min))),
+            ?assertThat(semver:build_version(Vsn), is(equal_to(Build)))
+        end)).
+
+prop_major_version_comparisons() ->
+    ?FORALL({VsnA, VsnB}, {integer(), integer()},
+        ?assertThat(semver:compare(semver:version(VsnA, 0, 0),
+                                   semver:version(VsnB, 0, 0)),
+                maintains_equivalence(VsnA, VsnB))).
+
+prop_symetry_of_compare() ->
+    ?FORALL({VsnA, VsnB}, {integer(), integer()},
+        begin
+            CmpA = semver:compare(semver:version(VsnA, 0, 0),
+                                       semver:version(VsnB, 0, 0)),
+            CmpB = semver:compare(semver:version(VsnB, 0, 0),
+                                       semver:version(VsnA, 0, 0)),
+            ?assertThat(CmpA, is_reflected_by(CmpB))
+        end).
+
+prop_symetry_of_equiv() ->
+    ?FORALL({VsnA, VsnB}, {integer(), integer()},
+        begin
+            A = semver:version(VsnA, 0, 0),
+            B = semver:version(VsnB, 0, 0),
+            ?assertThat(semver:equivalent(A, B), 
+                is(equal_to(semver:equivalent(B, A))))
+        end).
+
+prop_major_version_equivalence() ->
+    ?FORALL({VsnA, VsnB}, {integer(), integer()},
+        begin
+            A = semver:version(VsnA, 0, 0),
+            B = semver:version(VsnB, 0, 0),
+            ?assertThat(semver:equivalent(A, B), 
+                is(equal_to(VsnA == VsnB)))
+        end).
+
 prop_any_hyphenated_patch_is_allowed() ->
     ?FORALL(Patch, alphanum(), 
         ?IMPLIES(length(Patch) > 1,
-        ?assertThat(semver:parse("0.0.0-" ++ Patch),
-            is(equal_to(#semver{patch=Patch}))))).
+        ?assertThat(semver:patch(semver:parse("0.0.0-" ++ Patch)),
+            is(equal_to(Patch))))).
 
 prop_any_a2z_patch_without_hypthen_is_allowed() ->
     ?FORALL(Patch, a_to_z(), 
         ?IMPLIES(length(Patch) > 1,
         ?assertThat(semver:parse("0.0.0" ++ Patch),
             is(equal_to(#semver{patch=Patch}))))).    
+
+%%
+%% Custom PropEr Type Defs and Hamcrest Matchers
+%%
+
+is_reflected_by(CmpB) ->
+    fun(0) -> CmpB == 0;
+       (1) -> CmpB == -1;
+       (-1) -> CmpB == 1
+    end.
+
+maintains_equivalence(VsnA, VsnB) ->
+    fun(1) ->
+        VsnA > VsnB;
+       (0) ->
+        VsnA == VsnB;
+       (-1) ->
+        VsnA < VsnB
+    end.
 
 a_to_z() ->
     non_empty(list(integer(97, 122))).

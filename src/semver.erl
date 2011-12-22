@@ -21,22 +21,53 @@
 %% -----------------------------------------------------------------------------
 -module(semver).
 -export([parse/1, vsn_string/1, version/3]).
+-export([patch/1, major_version/1, minor_version/1, build_version/1]).
+-export([compare/2, equivalent/2]).
 
 -include("semver.hrl").
 
+-type semver() :: #semver{}.
+-export_type([semver/0]).
+
+-spec equivalent(semver(), semver()) -> boolean().
+equivalent(A, B) ->
+    compare(A, B) =:= 0.
+
+-spec compare(semver(), semver()) -> integer().
+compare(#semver{patch=P1}=A, #semver{patch=P2}=B) ->
+    case do_compare(unpack(A), unpack(B)) of
+        0 -> do_compare(P1, P2);
+        N -> N
+    end.
+
+-spec major_version(semver()) -> integer().
+major_version(#semver{major=M}) -> M.
+
+-spec minor_version(semver()) -> integer().
+minor_version(#semver{minor=M}) -> M.
+
+-spec build_version(semver()) -> integer().
+build_version(#semver{build=B}) -> B.
+
+-spec patch(semver()) -> string().
+patch(#semver{patch=P}) -> P.
+
+-spec vsn_string(semver()) -> string().
 vsn_string(#semver{major=Major, minor=Minor, build=Build}) ->
     io_lib:format("~p.~p.~p", [Major, Minor, Build]).
 
+-spec version(integer(), integer(), integer()) -> semver().
 version(Major, Minor, Build) ->
     #semver{major=Major, minor=Minor, build=Build}.
 
+-spec parse(string()) -> semver() | error.
 parse(V) ->
     case re:run(V,
         "(?<major>[\\d]+)\\.(?<minor>[\\d]+)\\.(?<build>[\\d]+)(?<patch>.*)",
         [no_auto_capture, anchored, notempty,
             {capture, [major, minor, build, patch], list}]) of
         nomatch ->
-            {error, invalid_version};
+            error;
         {match, [Maj,Min,Build,Patch]} ->
             Result = #semver{major=list_to_integer(Maj),
                              minor=list_to_integer(Min),
@@ -50,3 +81,14 @@ parse(V) ->
                     Result#semver{patch=Patch}
             end
     end.
+
+unpack(#semver{major=Maj, minor=Min, build=Build}) ->
+    list_to_float(lists:concat(
+            io_lib:format("~p~s~p~p", [Maj, ".", Min, Build]))).
+
+do_compare(undefined, undefined) -> 0;
+do_compare(_A, undefined) -> 1;
+do_compare(undefined, _B) -> -1;
+do_compare(A, B) when A > B -> 1;
+do_compare(A, B) when A < B -> -1;
+do_compare(A, B) when A == B -> 0.
