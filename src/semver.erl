@@ -37,10 +37,6 @@ parse(V) ->
             {capture, [major, minor, build, patch], list}]) of
         nomatch ->
             {error, invalid_version};
-        {match, [_,_,_,[]]=Matches} ->
-            list_to_tuple([semver|[list_to_integer(N) || 
-                                                N <- Matches, N /= []]] ++
-                                                [undefined]);
         {match, [Maj,Min,Build,Patch]} ->
             Result = #semver{major=list_to_integer(Maj),
                              minor=list_to_integer(Min),
