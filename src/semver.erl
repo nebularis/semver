@@ -54,7 +54,7 @@ patch(#semver{patch=P}) -> P.
 
 -spec vsn_string(semver()) -> string().
 vsn_string(#semver{major=Major, minor=Minor, build=Build}) ->
-    io_lib:format("~p.~p.~p", [Major, Minor, Build]).
+    lists:flatten(io_lib:format("v~p.~p.~p", [Major, Minor, Build])).
 
 -spec version(integer(), integer(), integer()) -> semver().
 version(Major, Minor, Build) ->
@@ -63,7 +63,7 @@ version(Major, Minor, Build) ->
 -spec parse(string()) -> semver() | error.
 parse(V) ->
     case re:run(V,
-        "(?<major>[\\d]+)\\.(?<minor>[\\d]+)\\.(?<build>[\\d]+)(?<patch>.*)",
+        "[v]{0,1}(?<major>[\\d]+)\\.(?<minor>[\\d]+)\\.(?<build>[\\d]+)(?<patch>.*)",
         [no_auto_capture, anchored, notempty,
             {capture, [major, minor, build, patch], list}]) of
         nomatch ->
